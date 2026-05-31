@@ -17,12 +17,30 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Maximize Disk Space (Агрессивная очистка)
+      - name: Maximize Disk Space (Супер-агрессивная очистка)
         run: |
-          sudo rm -rf /usr/share/dotnet /etc/mysql /var/lib/mysql /usr/local/lib/android /opt/ghc /usr/local/share/boost /usr/local/lib/node_modules
+          echo "=== Место ДО очистки ==="
+          df -h
+          
+          # Выносим гигантские папки с кэшем инструментов Гитхаба и тяжелым софтом
+          sudo rm -rf /opt/hostedtoolcache \
+                      /usr/local/lib/android \
+                      /usr/share/dotnet \
+                      /opt/ghc \
+                      /usr/share/swift \
+                      /usr/local/share/boost \
+                      /usr/local/lib/node_modules \
+                      /etc/mysql \
+                      /var/lib/mysql \
+                      /usr/share/azure-cli \
+                      /opt/az
+          
+          # Жестко удаляем тяжелые предустановленные пакеты и браузеры
+          sudo apt-get purge -y azure-cli google-cloud-sdk microsoft-edge-dev powershell mono-devel mono-runtime-common google-chrome-stable firefox
           sudo apt-get autoremove -y
           sudo apt-get clean
-          echo "=== Свободное место после очистки ==="
+          
+          echo "=== Место ПОСЛЕ супер-очистки ==="
           df -h
 
       - name: Install Build Packages
