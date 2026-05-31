@@ -36,13 +36,22 @@ jobs:
         run: |
           mkdir -p ~/android
           cd ~/android
-          repo init --depth=1 -u ${{ env.ROM_URL }} -b ${{ env.ROM_BRANCH }}
+          
+          # Тюнингуем Git, чтобы он не захлебывался на тяжелых бинарниках Клэнга
+          git config --global http.postBuffer 524288000
+          git config --global http.lowSpeedLimit 0
+          git config --global http.lowSpeedTime 999999
+          
+          # Добавляем --clone-filter=blob:none (дикая экономия места и защита от вылетов)
+          repo init --depth=1 --no-repo-verify -u ${{ env.ROM_URL }} -b ${{ env.ROM_BRANCH }} --clone-filter=blob:none
+          
           mkdir -p .repo/local_manifests
-          # Качаем манифест, который ты нашел
           curl -sL ${{ env.LOCAL_MANIFEST_URL }} -o .repo/local_manifests/manifest.xml
-          # Быстрая синхронизация без лишнего хлама
+          
+          # Запускаем чистую синхронизацию
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune
-          echo "=== Место на диске после синхронизации ==="
+          
+          echo "=== Проверяем остаток места на диске перед компиляцией ==="
           df -h
 
       - name: Run Compilation (Сборка прошивки)
