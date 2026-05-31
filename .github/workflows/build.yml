@@ -33,16 +33,15 @@ jobs:
                       /etc/mysql \
                       /var/lib/mysql \
                       /usr/share/azure-cli \
-                      /opt/az
+                      /opt/az || true
           
-          # Жестко удаляем тяжелые предустановленные пакеты и браузеры
-          sudo apt-get purge -y azure-cli google-cloud-sdk microsoft-edge-dev powershell mono-devel mono-runtime-common google-chrome-stable firefox
+          # Добавляем || true в конец, чтобы скрипт не падал из-за отсутствующих пакетов
+          sudo apt-get purge -y azure-cli google-cloud-sdk microsoft-edge-dev powershell mono-devel mono-runtime-common google-chrome-stable firefox || true
           sudo apt-get autoremove -y
           sudo apt-get clean
           
           echo "=== Место ПОСЛЕ супер-очистки ==="
           df -h
-
       - name: Install Build Packages
         run: |
           sudo apt-get update
