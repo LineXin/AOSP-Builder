@@ -1,0 +1,53 @@
+name: Build LineageOS 23 (Android 16) for Merlinx
+
+on:
+  workflow_dispatch: # Кнопка ручного запуска в панели Actions
+
+env:
+  DEVICE: merlinx
+  ROM_URL: https://github.com/LineageOS/android.git
+  ROM_BRANCH: lineage-23.0
+  LOCAL_MANIFEST_URL: https://raw.githubusercontent.com/EmreDemirn-Repos/manifest/main/manifest.xml
+
+jobs:
+  build_rom:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Maximize Disk Space (Агрессивная очистка)
+        run: |
+          sudo rm -rf /usr/share/dotnet /etc/mysql /var/lib/mysql /usr/local/lib/android /opt/ghc /usr/local/share/boost /usr/local/lib/node_modules
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          echo "=== Свободное место после очистки ==="
+          df -h
+
+      - name: Install Build Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3-pip openjdk-17-jdk repo
+          git config --global user.name "LineXin"
+          git config --global user.email "beka2023bak@gmail.com"
+
+      - name: Sync ROM Source (Синхронизация исходников)
+        run: |
+          mkdir -p ~/android
+          cd ~/android
+          repo init --depth=1 -u ${{ env.ROM_URL }} -b ${{ env.ROM_BRANCH }}
+          mkdir -p .repo/local_manifests
+          # Качаем манифест, который ты нашел
+          curl -sL ${{ env.LOCAL_MANIFEST_URL }} -o .repo/local_manifests/manifest.xml
+          # Быстрая синхронизация без лишнего хлама
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune
+          echo "=== Место на диске после синхронизации ==="
+          df -h
+
+      - name: Run Compilation (Сборка прошивки)
+        run: |
+          cd ~/android
+          source build/envsetup.sh
+          breakfast ${{ env.DEVICE }} userdebug
+          mka lineage -j$(nproc --all)
